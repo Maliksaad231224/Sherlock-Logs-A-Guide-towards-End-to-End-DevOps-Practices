@@ -1,8 +1,8 @@
 # Sherlock Logs: End-to-End Observability Lab
 
-Sherlock Logs is an end-to-end infrastructure and observability project that combines a multi-VM lab, Kubernetes workloads, CI/CD delivery, and centralized monitoring/logging.
+Sherlock Logs is a local VM-based lab for demonstrating a production-style delivery stack with Vagrant, Docker, Kubernetes, ELK, and monitoring.
 
-It demonstrates how a frontend status dashboard, a Python backend, and platform services (Prometheus, Grafana, ELK) can be provisioned and operated as one pipeline.
+Vagrant is used to provision and reproduce the virtual machines that make the lab consistent across runs, while Docker, Kubernetes, ELK, and monitoring services show the application and observability workflow end to end.
 
 ## What This Project Delivers
 
@@ -58,7 +58,14 @@ Frontend service:
 
 ## Quick Start (Local VM Lab)
 
-1. Install prerequisites: Vagrant and VirtualBox.
+### Prerequisites
+
+Before you begin, install:
+
+- VirtualBox
+- Docker Engine
+
+1. Install the prerequisites above, then use the Vagrant workflow below to launch the lab.
 2. Start the lab:
 
 ```powershell

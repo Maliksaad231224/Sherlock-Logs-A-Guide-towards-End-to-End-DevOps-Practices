@@ -26,7 +26,7 @@ Vagrant.configure("2") do |config|
   bash /home/vagrant/project/scripts/kubernates.sh
   SHELL
   
-  
+
   config.vm.provision "shell", inline: <<-SHELL
     set -e
     echo "Installing Docker..."
@@ -45,4 +45,15 @@ Vagrant.configure("2") do |config|
     bash /home/vagrant/project/scripts/local-deploy.sh
   SHELL
 
+  config.vm.provision "shell", inline: <<-SHELL
+    set -e
+    echo "Running base setup..."
+    bash /home/vagrant/project/scripts/monitoring.sh
+  SHELL
+
+  config.vm.provision "shell", inline: <<-SHELL
+    set -e
+    echo "Running base setup..."
+    bash /home/vagrant/project/scripts/logging.sh
+  SHELL
 end
