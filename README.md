@@ -2,6 +2,7 @@
 
 Sherlock Logs is a local VM-based lab for demonstrating a production-style delivery stack with Vagrant, Docker, Kubernetes, ELK, and monitoring.
 
+# Vagrant: A brief Introduction to our Pocket VM
 Vagrant is used to provision and reproduce the virtual machines that make the lab consistent across runs, while Docker, Kubernetes, ELK, and monitoring services show the application and observability workflow end to end.
 
 ## What This Project Delivers
