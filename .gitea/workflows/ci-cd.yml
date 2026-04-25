@@ -1,0 +1,185 @@
+name: sherlock-logs-ci-cd
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "k8s/**"
+      - ".gitea/workflows/**"
+
+concurrency:
+  group: sherlock-logs-prod
+  cancel-in-progress: true
+
+jobs:
+  test_lint_security:
+    runs-on: ubuntu-latest
+    container: python:3.11-slim
+
+    steps:
+      - name: Clone repository
+        run: |
+          apt-get update
+          apt-get install -y git curl
+          git clone http://gitea-admin:Admin_1234!@192.168.56.15:3000/gitea-admin/sherlock-logs.git .
+          ls -la
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff bandit
+
+      - name: Lint 
+        run: |
+          cd backend
+          ruff check .
+
+      - name: Unit tests
+        run: |
+          cd backend
+          pytest -q
+
+      - name: Security scan
+        run: |
+          cd backend
+          bandit -r . -q -lll -x ./tests || true
+
+  build_push_deploy:
+    needs: [test_lint_security]
+    runs-on: ubuntu-latest
+    container: docker:27-cli
+
+    env:
+      REGISTRY: 192.168.56.15:5000
+      BACKEND_IMAGE: sherlock-logs-backend
+      FRONTEND_IMAGE: sherlock-logs-frontend
+      K8S_NODE: app1
+
+    steps:
+      - name: Install tools (git, curl, ssh)
+        run: |
+          apk add --no-cache git curl openssh-client tar
+
+      - name: Clone repository
+        run: |
+          git clone http://gitea-admin:Admin_1234!@192.168.56.15:3000/gitea-admin/sherlock-logs.git .
+          ls -la
+
+      - name: Docker info
+        run: |
+          docker version
+          docker info | head -n 30
+
+      - name: Registry reachable check
+        run: |
+          curl -fsS --max-time 3 http://192.168.56.15:5000/v2/ >/dev/null
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t $REGISTRY/$BACKEND_IMAGE:${GITHUB_SHA} \
+            -t $REGISTRY/$BACKEND_IMAGE:prod \
+            ./backend
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            -t $REGISTRY/$FRONTEND_IMAGE:${GITHUB_SHA} \
+            -t $REGISTRY/$FRONTEND_IMAGE:prod \
+            ./frontend
+
+      - name: Trivy scan backend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity HIGH,CRITICAL \
+            $REGISTRY/$BACKEND_IMAGE:${GITHUB_SHA} || true
+
+      - name: Trivy scan frontend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity HIGH,CRITICAL \
+            $REGISTRY/$FRONTEND_IMAGE:${GITHUB_SHA} || true
+
+      - name: Push images to registry
+        run: |
+          docker push $REGISTRY/$BACKEND_IMAGE:${GITHUB_SHA}
+          docker push $REGISTRY/$BACKEND_IMAGE:prod
+          docker push $REGISTRY/$FRONTEND_IMAGE:${GITHUB_SHA}
+          docker push $REGISTRY/$FRONTEND_IMAGE:prod
+
+      - name: Setup SSH
+        shell: sh
+        run: |
+          set -eu
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s' "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          cat > ~/.ssh/config <<'EOF'
+          Host app1
+            HostName 192.168.56.13
+            User devops
+            IdentityFile ~/.ssh/id_ed25519
+            StrictHostKeyChecking no
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Verify k3s reachable on app1
+        run: |
+          ssh $K8S_NODE "sudo k3s kubectl get nodes >/dev/null"
+
+      - name: Deploy to Kubernetes (app1 k3s)
+        shell: sh
+        run: |
+          set -eu
+
+          tar -czf - k8s | ssh $K8S_NODE 'rm -rf /tmp/sherlock-k8s && mkdir -p /tmp/sherlock-k8s && tar -xzf - -C /tmp/sherlock-k8s'
+
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/app-config.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/app-secret.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/backend-deployment.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/backend-service.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/frontend-deployment.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/frontend-service.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/frontend-hpa.yaml"
+          ssh $K8S_NODE "sudo k3s kubectl apply -f /tmp/sherlock-k8s/k8s/ingress.yaml"
+
+          ssh $K8S_NODE "sudo k3s kubectl set image deployment/backend backend=$REGISTRY/$BACKEND_IMAGE:${GITHUB_SHA}"
+          ssh $K8S_NODE "sudo k3s kubectl set image deployment/frontend frontend=$REGISTRY/$FRONTEND_IMAGE:${GITHUB_SHA}"
+
+          ssh $K8S_NODE "sudo k3s kubectl rollout status deployment/backend --timeout=180s"
+          ssh $K8S_NODE "sudo k3s kubectl rollout status deployment/frontend --timeout=180s"
+
+          ssh $K8S_NODE "curl -fsS --max-time 5 http://127.0.0.1:30007/ >/dev/null"
+
+      - name: Notify success (Discord Webhook)
+        if: success()
+        run: |
+          if [ -n "${{ secrets.NOTIFY_WEBHOOK }}" ]; then
+            curl -fsS -X POST -H "Content-Type: application/json" \
+              -d "{\"content\":\"✅ CI/CD succeeded: ${GITHUB_SHA}\"}" \
+              "${{ secrets.NOTIFY_WEBHOOK }}"
+          else
+            echo "No NOTIFY_WEBHOOK set; skipping notification."
+          fi
+
+      - name: Notify failure (Discord)
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.NOTIFY_WEBHOOK }}" ]; then
+            curl -fsS -X POST -H "Content-Type: application/json" \
+              -d "{\"content\":\"❌ CI/CD FAILED: ${GITHUB_SHA}\"}" \
+              "${{ secrets.NOTIFY_WEBHOOK }}"
+          else
+            echo "No NOTIFY_WEBHOOK set; skipping notification."
+          fi

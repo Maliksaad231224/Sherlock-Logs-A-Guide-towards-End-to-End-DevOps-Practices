@@ -1,0 +1,97 @@
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.python-version
+venv/
+.venv/
+env/
+ENV/
+
+# Node/frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build and runtime artifacts
+dist/
+build/
+tmp/
+temp/
+*.log
+logs/
+*.pid
+
+# Containers and local registry
+.docker/
+docker-compose.override.yml
+
+# Vagrant and VM artifacts
+.vagrant/
+*.box
+
+# Terraform and infra state
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Kubernetes generated artifacts
+*.kubeconfig
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+*.pub
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+authorized_keys
+
+# Project-specific sensitive files
+act_runner.token
+act_runner.url
+backup_devops_authorized_keys
+backup_rsync_ed25519
+backup_rsync_ed25519.pub
+backup.va
+cicd_deploy.pub
+devops_authorized_keys
+wg-charles.conf
+
+# Data exports and backups
+*.bak
+*.backup
+*.tmp
+*.ndjson
+*.jsonl
