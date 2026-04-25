@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
 
   echo "Giving execute permission to all scripts..."
   chmod +x /home/vagrant/project/scripts/*
+  chmod +x /home/vagrant/execution.sh
 
   echo "Running Kubernetes install script..."
   bash /home/vagrant/project/scripts/kubernates.sh
