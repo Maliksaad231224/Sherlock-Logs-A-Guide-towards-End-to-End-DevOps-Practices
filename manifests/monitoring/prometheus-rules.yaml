@@ -96,3 +96,24 @@ spec:
           severity: critical
         annotations:
           summary: "Alertmanager is down"
+
+    - name: logging-alerts
+      rules:
+
+      - alert: ElasticsearchClusterNotGreen
+        expr: elasticsearch_cluster_health_status{color=~"yellow|red"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch cluster not green"
+          description: "Elasticsearch reported yellow or red health status for more than 5 minutes"
+
+      - alert: FluentBitOutputErrors
+        expr: increase(fluentbit_output_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fluent Bit output errors"
+          description: "Fluent Bit has recorded output errors in the last 5 minutes"

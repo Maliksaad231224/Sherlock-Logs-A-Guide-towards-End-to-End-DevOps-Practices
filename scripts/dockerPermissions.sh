@@ -17,9 +17,7 @@ echo "======================================"
 echo "🚀 STARTING FULL DEVOPS PIPELINE"
 echo "======================================"
 
-# =====================================================
-# DOCKER SETUP (VAGRANT SAFE - RUNS ONCE)
-# =====================================================
+
 echo "🔧 Ensuring Docker setup..."
 
 sudo groupadd docker || true
@@ -27,27 +25,24 @@ sudo usermod -aG docker vagrant
 
 echo "⚠️ If Docker fails, run: vagrant reload (once)"
 
-# =====================================================
-# LOAD ENV VARIABLES
-# =====================================================
-# =====================================================
-# LOAD ENV VARIABLES
-# =====================================================
+
 if [ -f .env ]; then
-  echo "🔐 Loading .env file..."
-  set -a
-  source .env
-  set +a
+echo "🔐 Loading .env file..."
+set -a
+source .env
+set +a
 fi
 
 if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
-  echo "❌ Missing DOCKER_USERNAME or DOCKER_PASSWORD"
-  exit 1
+echo "❌ Missing DOCKER_USERNAME or DOCKER_PASSWORD"
+exit 1
 fi
 
-# =====================================================
-# DOCKER LOGIN (FIXED)
-# =====================================================
-echo "🔐 Logging into Docker Hub..."
 
-echo "$DOCKER_PASSWORD" | sudo docker login -u "$DOCKER_USERNAME" --password-stdin
+echo "🔐 Logging into Docker Hub..."
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+
+echo "======================================"
+echo "📦 FRONTEND BUILD"
+echo "======================================"

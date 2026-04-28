@@ -35,6 +35,7 @@ kubectl patch svc monitoring-grafana -n monitoring \
 
 kubectl get svc -n monitoring monitoring-grafana
 
+echo "grafana url :http://192.168.56.10:30632"
 echo "grafana username :admin"
 echo "grafana password :$(kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo)"
 
@@ -43,7 +44,4 @@ kubectl patch svc monitoring-kube-prometheus-prometheus -n monitoring \
 
 kubectl get svc -n monitoring | grep prometheus
 
-echo "======================================"
-echo "📊 FETCHING MONITORING URLS"
-sleep 10
-kubectl get pods -n monitoring
+echo "prometheus is http://192.168.56.10:32252"

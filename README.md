@@ -1,6 +1,6 @@
-# Sherlock Logs: End-to-End Observability Lab
+# Cluster Chronicles: End-to-End Observability Lab
 
-Sherlock Logs is a local VM-based lab for demonstrating a production-style delivery stack with Vagrant, Docker, Kubernetes, ELK, and monitoring.
+Cluster Chronicles is a local VM-based lab for demonstrating a production-style delivery stack with Vagrant, Docker, Kubernetes, ELK, and monitoring.
 
 ## Vagrant: A brief Introduction to our Pocket VM
 Vagrant is used to provision and reproduce the virtual machines that make the lab consistent across runs, while Docker, Kubernetes, ELK, and monitoring services show the application and observability workflow end to end.
@@ -37,7 +37,7 @@ Frontend Pods     Backend Pods (Flask)
 ```
 ## Architecture Diagram
 
-![Sherlock Logs Architecture](assets/diagram.png)
+![Cluster Chronicles Architecture](assets/diagram.png)
 
 ## Repository Layout
 
@@ -70,6 +70,8 @@ Before you begin, install:
 
 - VirtualBox
 - Docker Engine
+- Vagrant
+
 
 1. Install the prerequisites above, then use the Vagrant workflow below to launch the lab.
 2. Start the lab:
@@ -130,7 +132,3 @@ Reference commands are in:
 - If images do not pull, verify local registry accessibility from the k3s node
 - If endpoint responses fail, inspect backend pod logs and service selectors
 - If dashboard is blank, confirm frontend can reach backend at configured `BACKEND_URL`
-
-## License
-
-Add a LICENSE file to define distribution and usage terms for this repository.

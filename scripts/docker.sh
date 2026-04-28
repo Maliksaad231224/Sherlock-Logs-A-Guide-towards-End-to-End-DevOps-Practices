@@ -32,9 +32,7 @@ echo "🚀 Starting Docker..."
 sudo systemctl enable docker
 sudo systemctl start docker
 
-
 echo "🔐 Logging into Docker registry (ENV based)..."
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
 echo "✅ Setup complete"
-
